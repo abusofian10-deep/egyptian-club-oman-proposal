@@ -1,0 +1,14 @@
+node_modules/
+node_modules 3
+dist/
+out/
+.DS_Store
+* 2.*
+* 2
+
+# Unrelated Remotion media assets
+public/humaidhi-sketch.mp4
+public/fateen-cta.jpg
+public/bgm.mp3
+public/fonts/
+src/fonts/

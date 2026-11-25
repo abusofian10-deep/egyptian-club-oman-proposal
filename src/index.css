@@ -1,0 +1,25 @@
+@import "./fonts/fonts-offline.css";
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+  letter-spacing: 0 !important;
+}
+
+.font-cairo {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+}
+
+.font-tajawal {
+  font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
+}
