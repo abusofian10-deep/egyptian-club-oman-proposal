@@ -54,7 +54,7 @@ const T: Record<string, Record<Lang, string>> = {
   heroMeta:        { ar: 'مقدم إلى مجلس إدارة نادي الجالية المصرية بسلطنة عُمان', en: 'Submitted to the Board of Directors — Egyptian Community Club in the Sultanate of Oman' },
   heroCta:         { ar: 'اكتشف المسارات الثلاثة ↓', en: 'Explore the 3 Tracks ↓' },
   whyTitle:        { ar: 'لماذا هذا النموذج مختلف؟', en: 'Why Is This Format Different?' },
-  whySub:          { ar: 'نقلة نوعية من الندوات النظرية المعتادة إلى تجربة عملية حية تخدم جميع أفراد أبناء الجالية', en: 'A qualitative shift from traditional lectures to a live practical experience serving all members of the community' },
+  whySub:          { ar: 'نقلة نوعية من الندوات النظرية المعتادة إلى تجربة عملية حية تخدم جميع أبناء الجالية', en: 'A qualitative shift from traditional lectures to a live practical experience serving all members of the community' },
   beforeTitle:     { ar: 'النمط التقليدي للندوات', en: 'Traditional Seminar Format' },
   afterTitle:      { ar: 'نموذج التطبيق الحي والتصويت المباشر', en: 'Live Demo + Direct Voting Model' },
   tracksTitle:     { ar: 'ثلاثة مسارات متكاملة تخدم جميع شرائح الجالية', en: 'Three Integrated Tracks Serving All Community Segments' },
@@ -171,58 +171,153 @@ function SectionHeader({
   );
 }
 
-/* ─── Animated Waving Egyptian Flag (Motion Emblem) ───────────────── */
-function EgyptFlagMotion({ width = 54, height = 36 }: { width?: number; height?: number }) {
+/* ─── Full-Bleed Motion Graphic Waving Egyptian Flag Background ────── */
+function EgyptFlagMotionBg() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Pre-render high-resolution flag texture onto an offscreen canvas once
+    const texW = 900;
+    const texH = 600;
+    const off = document.createElement('canvas');
+    off.width = texW;
+    off.height = texH;
+    const octx = off.getContext('2d');
+    if (!octx) return;
+
+    // Tricolor bands
+    octx.fillStyle = '#CE1126';
+    octx.fillRect(0, 0, texW, texH / 3);
+    octx.fillStyle = '#FFFFFF';
+    octx.fillRect(0, texH / 3, texW, texH / 3);
+    octx.fillStyle = '#000000';
+    octx.fillRect(0, (texH * 2) / 3, texW, texH / 3);
+
+    // Golden Eagle of Saladin centered in white band
+    octx.save();
+    octx.translate(texW / 2, texH / 2);
+    octx.scale(9.5, 9.5);
+    const eaglePath = new Path2D(
+      'M0-7.2 C1.1-7.2 1.8-6.4 1.8-5.4 C1.8-4.7 1.3-4.2 0.8-4.0 L1.2-2.6 L4.6-4.2 C5.6-4.6 6.5-3.8 6.3-2.6 L5.2 2.4 C4.9 3.6 3.7 4.4 2.4 4.4 L1.4 4.4 L2.1 6.6 L0.8 6.6 L0 5.0 L-0.8 6.6 L-2.1 6.6 L-1.4 4.4 L-2.4 4.4 C-3.7 4.4 -4.9 3.6 -5.2 2.4 L-6.3-2.6 C-6.5-3.8 -5.6-4.6 -4.6-4.2 L-1.2-2.6 L-0.8-4.0 C-1.3-4.2 -1.8-4.7 -1.8-5.4 C-1.8-6.4 -1.1-7.2 0-7.2 Z'
+    );
+    octx.fillStyle = '#C09300';
+    octx.fill(eaglePath);
+    octx.fillStyle = '#FFFFFF';
+    octx.fillRect(-1.4, -2.2, 2.8, 5.2);
+    octx.fillStyle = '#C09300';
+    octx.fillRect(-0.5, -2.2, 1.0, 5.2);
+    octx.restore();
+
+    let rafId = 0;
+    let width = 0;
+    let height = 0;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      width = parent.clientWidth;
+      height = parent.clientHeight;
+      canvas.width = Math.max(1, Math.floor(width * dpr));
+      canvas.height = Math.max(1, Math.floor(height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resize();
+    const ro = new ResizeObserver(resize);
+    if (canvas.parentElement) ro.observe(canvas.parentElement);
+
+    const start = performance.now();
+
+    const drawFrame = (now: number) => {
+      if (!width || !height) {
+        rafId = requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      const t = (now - start) * 0.001;
+      ctx.clearRect(0, 0, width, height);
+
+      // Cover scaling with generous vertical room for wave amplitude
+      const padY = Math.min(48, height * 0.09);
+      const drawW = width;
+      const drawH = height - padY * 2;
+      const sliceW = 4;
+      const steps = Math.ceil(drawW / sliceW);
+
+      for (let i = 0; i < steps; i++) {
+        const x = i * sliceW;
+        const p = x / drawW;
+        const srcX = p * texW;
+        const srcW = Math.min(texW - srcX, (sliceW / drawW) * texW + 0.8);
+
+        // Travelling cloth wave (gentle on left anchor, fuller wave across center & right)
+        const amp = (10 + p * 26);
+        const phase1 = p * 7.5 - t * 2.3;
+        const phase2 = p * 13.0 - t * 3.4;
+        const waveY = Math.sin(phase1) * amp + Math.sin(phase2) * (amp * 0.25);
+        const slope = Math.cos(phase1);
+
+        const destY = padY + waveY;
+
+        ctx.drawImage(off, srcX, 0, srcW, texH, x, destY, sliceW + 0.6, drawH);
+
+        // 3D cloth fold highlight & shadow
+        if (slope > 0) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${slope * 0.16})`;
+          ctx.fillRect(x, destY, sliceW + 0.6, drawH);
+        } else {
+          ctx.fillStyle = `rgba(0, 0, 0, ${-slope * 0.26})`;
+          ctx.fillRect(x, destY, sliceW + 0.6, drawH);
+        }
+      }
+
+      if (!reducedMotion) {
+        rafId = requestAnimationFrame(drawFrame);
+      }
+    };
+
+    rafId = requestAnimationFrame(drawFrame);
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
     <div
-      className="egypt-flag-wrap"
-      aria-label="علم جمهورية مصر العربية"
-      title="علم جمهورية مصر العربية"
+      className="no-print"
+      aria-hidden="true"
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        flexShrink: 0,
+        position: 'absolute',
+        inset: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 0,
       }}
     >
-      {/* Subtle gold flagpole */}
-      <div style={{
-        width: 3,
-        height: height + 6,
-        borderRadius: 99,
-        background: `linear-gradient(180deg, ${C.goldL}, ${C.gold}, #8B6926)`,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-        flexShrink: 0,
-      }} />
-      {/* Waving flag cloth */}
-      <div
-        className="egypt-flag-cloth"
+      <canvas
+        ref={canvasRef}
         style={{
-          width,
-          height,
-          borderRadius: 4,
-          overflow: 'hidden',
-          position: 'relative',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.18)',
-          transformOrigin: 'left center',
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          opacity: 0.26,
+          filter: 'saturate(1.08)',
         }}
-      >
-        <svg viewBox="0 0 90 60" width="100%" height="100%" style={{ display: 'block' }}>
-          {/* Red stripe */}
-          <rect x="0" y="0" width="90" height="20" fill="#CE1126" />
-          {/* White stripe */}
-          <rect x="0" y="20" width="90" height="20" fill="#FFFFFF" />
-          {/* Black stripe */}
-          <rect x="0" y="40" width="90" height="20" fill="#000000" />
-          {/* Eagle of Saladin (Golden emblem centered in white band) */}
-          <g transform="translate(45, 30)" fill="#C09300">
-            <path d="M0-7.2 C1.1-7.2 1.8-6.4 1.8-5.4 C1.8-4.7 1.3-4.2 0.8-4.0 L1.2-2.6 L4.6-4.2 C5.6-4.6 6.5-3.8 6.3-2.6 L5.2 2.4 C4.9 3.6 3.7 4.4 2.4 4.4 L1.4 4.4 L2.1 6.6 L0.8 6.6 L0 5.0 L-0.8 6.6 L-2.1 6.6 L-1.4 4.4 L-2.4 4.4 C-3.7 4.4 -4.9 3.6 -5.2 2.4 L-6.3-2.6 C-6.5-3.8 -5.6-4.6 -4.6-4.2 L-1.2-2.6 L-0.8-4.0 C-1.3-4.2 -1.8-4.7 -1.8-5.4 C-1.8-6.4 -1.1-7.2 0-7.2 Z" />
-            <rect x="-1.4" y="-2.2" width="2.8" height="5.2" rx="0.6" fill="#FFFFFF" />
-            <rect x="-0.5" y="-2.2" width="1.0" height="5.2" fill="#C09300" />
-          </g>
-        </svg>
-        {/* Animated cloth wave light/shadow sheen */}
-        <div className="egypt-flag-sheen" />
-      </div>
+      />
+      {/* Executive dark vignette scrim so white & gold typography stays razor sharp */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.42) 0%, rgba(15,23,42,0.78) 85%, rgba(15,23,42,0.92) 100%)',
+      }} />
     </div>
   );
 }
@@ -367,16 +462,14 @@ function Navbar({
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: 68, gap: 12,
       }}>
-        {/* Top-Right (in RTL): Egyptian Flag (motion) + Large WhatsApp Button that expands on hover */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          <EgyptFlagMotion width={34} height={22} />
-          <div
-            style={{ position: 'relative', flexShrink: 0 }}
-            onMouseEnter={() => setWaHovered(true)}
-            onMouseLeave={() => setWaHovered(false)}
-            onFocus={() => setWaHovered(true)}
-            onBlur={() => setWaHovered(false)}
-          >
+        {/* Top-Right (in RTL): Large WhatsApp Button that expands on hover to reveal "للتواصل · 0096892940008" */}
+        <div
+          style={{ position: 'relative', flexShrink: 0 }}
+          onMouseEnter={() => setWaHovered(true)}
+          onMouseLeave={() => setWaHovered(false)}
+          onFocus={() => setWaHovered(true)}
+          onBlur={() => setWaHovered(false)}
+        >
           <a
             href={WHATSAPP_URL}
             target="_blank"
@@ -435,7 +528,6 @@ function Navbar({
               </span>
             </span>
           </a>
-          </div>
         </div>
 
         {/* Desktop Nav Links with clear Active State */}
@@ -563,34 +655,21 @@ function Hero({ lang, onGoTracks }: { lang: Lang; onGoTracks: () => void }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden', padding: '116px 24px 72px',
     }}>
-      {/* Background mesh decoration */}
-      <div className="no-print" style={{ position: 'absolute', inset: 0, opacity: 0.08, backgroundImage: `radial-gradient(circle at 20% 50%, ${C.gold} 0%, transparent 50%), radial-gradient(circle at 80% 20%, ${C.petrol} 0%, transparent 50%)`, pointerEvents: 'none' }} />
-      <div className="no-print" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)` }} />
+      {/* Large Waving Egyptian Flag Motion Graphic Background */}
+      <EgyptFlagMotionBg />
+      <div className="no-print" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)`, zIndex: 1 }} />
 
-      <div style={{ maxWidth: 880, textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        {/* Club Name Executive Letterhead + Waving Egyptian Flag */}
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 14,
-          flexWrap: 'wrap',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(197,160,89,0.28)',
-          borderRadius: 16,
-          padding: '10px 22px',
-          marginBottom: 18,
-          animation: 'fadeSlideDown 0.7s ease both',
+      <div style={{ maxWidth: 880, textAlign: 'center', position: 'relative', zIndex: 2 }}>
+        {/* Club Name */}
+        <div className="print-dark-accent" style={{
+          display: 'inline-block',
+          color: C.goldL,
+          fontSize: 'clamp(15px, 1.9vw, 18px)',
+          fontWeight: 800,
+          fontFamily: isAr ? 'Cairo, sans-serif' : 'Inter, sans-serif',
+          marginBottom: 14,
         }}>
-          <EgyptFlagMotion width={50} height={33} />
-          <span className="print-dark-accent" style={{
-            color: C.goldL,
-            fontSize: 'clamp(15px, 1.9vw, 19px)',
-            fontWeight: 800,
-            fontFamily: isAr ? 'Cairo, sans-serif' : 'Inter, sans-serif',
-          }}>
-            {t('clubName', lang)}
-          </span>
+          {t('clubName', lang)}
         </div>
 
         <br />
@@ -1214,8 +1293,12 @@ function PresenterFooter({ lang }: { lang: Lang }) {
       padding: '88px 24px 48px',
       borderTop: `2px solid rgba(197,160,89,0.35)`,
       scrollMarginTop: 80,
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      {/* Large Waving Egyptian Flag Motion Graphic Background */}
+      <EgyptFlagMotionBg />
+      <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 2 }}>
         <Reveal>
           <SectionHeader
             badgeAr="٠٦ · مقدِّم المقترح"
@@ -1373,27 +1456,6 @@ const globalCSS = `
   @keyframes bounce {
     0%, 100% { transform: translateY(0); }
     50%       { transform: translateY(8px); }
-  }
-  @keyframes egyptFlagWave {
-    0%   { transform: perspective(180px) rotateY(0deg) skewY(0deg) scaleX(1); }
-    25%  { transform: perspective(180px) rotateY(-8deg) skewY(1.8deg) scaleX(0.98); }
-    50%  { transform: perspective(180px) rotateY(4deg) skewY(-1.4deg) scaleX(1.01); }
-    75%  { transform: perspective(180px) rotateY(-6deg) skewY(1.2deg) scaleX(0.99); }
-    100% { transform: perspective(180px) rotateY(0deg) skewY(0deg) scaleX(1); }
-  }
-  @keyframes egyptFlagSheen {
-    0%   { transform: translateX(-120%); }
-    100% { transform: translateX(140%); }
-  }
-  .egypt-flag-cloth {
-    animation: egyptFlagWave 3.2s ease-in-out infinite;
-  }
-  .egypt-flag-sheen {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.34) 45%, rgba(0,0,0,0.16) 58%, transparent 80%);
-    animation: egyptFlagSheen 2.8s ease-in-out infinite;
-    pointer-events: none;
   }
 
   @media (max-width: 960px) {
