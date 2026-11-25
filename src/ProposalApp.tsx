@@ -171,85 +171,8 @@ function SectionHeader({
   );
 }
 
-/* ─── Static Ceremonial Draped Egyptian Flags (Left & Right Sides) ──── */
-function EgyptDrapedFlagBanner({ side }: { side: 'left' | 'right' }) {
-  const isLeft = side === 'left';
-  // Left banner: Red outer -> White center -> Black inner
-  // Right banner: Black inner -> White center -> Red outer
-  const colors = isLeft ? ['#CE1126', '#FFFFFF', '#000000'] : ['#000000', '#FFFFFF', '#CE1126'];
-
-  return (
-    <div
-      className="egypt-drape-banner"
-      style={{
-        position: 'absolute',
-        top: 0,
-        [side]: 0,
-        width: 'clamp(58px, 11.5vw, 165px)',
-        height: '86%',
-        display: 'flex',
-        flexDirection: 'row',
-        overflow: 'hidden',
-        opacity: 0.44,
-        boxShadow: isLeft
-          ? '12px 0 36px rgba(0,0,0,0.45)'
-          : '-12px 0 36px rgba(0,0,0,0.45)',
-        borderRight: isLeft ? '1.5px solid rgba(197,160,89,0.45)' : 'none',
-        borderLeft: !isLeft ? '1.5px solid rgba(197,160,89,0.45)' : 'none',
-        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 58%, transparent 100%)',
-        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 58%, transparent 100%)',
-      }}
-    >
-      {/* Three vertical tricolor bands */}
-      {colors.map((bg, idx) => (
-        <div
-          key={idx}
-          style={{
-            flex: 1,
-            height: '100%',
-            background: bg,
-            position: 'relative',
-          }}
-        />
-      ))}
-
-      {/* Authentic Official Golden Eagle of Saladin upright inside center White band */}
-      <div style={{
-        position: 'absolute',
-        top: '23%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '30%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-      }}>
-        <img
-          src="./egypt-eagle.svg"
-          alt=""
-          style={{
-            width: '100%',
-            height: 'auto',
-            display: 'block',
-            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.18))',
-          }}
-        />
-      </div>
-
-      {/* Realistic vertical ceremonial curtain drape pleats/shading */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background:
-          'linear-gradient(90deg, rgba(0,0,0,0.34) 0%, rgba(255,255,255,0.12) 15%, rgba(0,0,0,0.05) 33%, rgba(0,0,0,0.22) 50%, rgba(255,255,255,0.12) 67%, rgba(0,0,0,0.06) 84%, rgba(0,0,0,0.34) 100%)',
-        pointerEvents: 'none',
-      }} />
-    </div>
-  );
-}
-
-function EgyptDrapedFlagsBg() {
+/* ─── Authentic Static Horizontal Egyptian Flag Background (High Contrast) ── */
+function EgyptHorizontalFlagBg() {
   return (
     <div
       className="no-print"
@@ -260,10 +183,28 @@ function EgyptDrapedFlagsBg() {
         overflow: 'hidden',
         pointerEvents: 'none',
         zIndex: 0,
+        backgroundColor: C.navy,
       }}
     >
-      <EgyptDrapedFlagBanner side="left" />
-      <EgyptDrapedFlagBanner side="right" />
+      <img
+        src="./flag-of-egypt.svg"
+        alt=""
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center center',
+          display: 'block',
+          opacity: 0.74,
+          filter: 'contrast(1.16) saturate(1.18)',
+        }}
+      />
+      {/* Light edge vignette only — keeps the flag vivid & high-contrast on mobile and desktop */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.16) 0%, rgba(15,23,42,0.48) 100%)',
+      }} />
     </div>
   );
 }
@@ -601,11 +542,23 @@ function Hero({ lang, onGoTracks }: { lang: Lang; onGoTracks: () => void }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden', padding: '116px 24px 72px',
     }}>
-      {/* Static Ceremonial Draped Official Egyptian Flags (Left & Right) */}
-      <EgyptDrapedFlagsBg />
+      {/* Authentic High-Contrast Horizontal Egyptian Flag Background */}
+      <EgyptHorizontalFlagBg />
       <div className="no-print" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)`, zIndex: 1 }} />
 
-      <div style={{ maxWidth: 880, textAlign: 'center', position: 'relative', zIndex: 2 }}>
+      <div className="print-hero-inner" style={{
+        maxWidth: 880,
+        width: '100%',
+        textAlign: 'center',
+        position: 'relative',
+        zIndex: 2,
+        background: 'rgba(15, 23, 42, 0.56)',
+        backdropFilter: 'blur(4px)',
+        borderRadius: 24,
+        border: '1px solid rgba(197, 160, 89, 0.42)',
+        padding: 'clamp(28px, 4.5vw, 48px) clamp(18px, 3.5vw, 40px)',
+        boxShadow: '0 16px 48px rgba(0, 0, 0, 0.42)',
+      }}>
         {/* Club Name */}
         <div className="print-dark-accent" style={{
           display: 'inline-block',
@@ -1242,22 +1195,31 @@ function PresenterFooter({ lang }: { lang: Lang }) {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Static Ceremonial Draped Official Egyptian Flags (Left & Right) */}
-      <EgyptDrapedFlagsBg />
+      {/* Authentic High-Contrast Horizontal Egyptian Flag Background */}
+      <EgyptHorizontalFlagBg />
       <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 2 }}>
         <Reveal>
-          <SectionHeader
-            badgeAr="٠٦ · مقدِّم المقترح"
-            badgeEn="06 · ABOUT THE PRESENTER"
-            title={t('bioName', lang)}
-            subtitle={t('bioRole', lang)}
-            lang={lang}
-            dark
-          />
+          <div className="print-card" style={{
+            background: 'rgba(15, 23, 42, 0.64)',
+            backdropFilter: 'blur(4px)',
+            border: '1px solid rgba(197, 160, 89, 0.36)',
+            borderRadius: 20,
+            padding: '26px 22px 12px',
+            marginBottom: 28,
+          }}>
+            <SectionHeader
+              badgeAr="٠٦ · مقدِّم المقترح"
+              badgeEn="06 · ABOUT THE PRESENTER"
+              title={t('bioName', lang)}
+              subtitle={t('bioRole', lang)}
+              lang={lang}
+              dark
+            />
+          </div>
         </Reveal>
 
         <Reveal delay={100}>
-          <div className="print-card" style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(197,160,89,0.32)`, borderRadius: 24, padding: 'clamp(28px, 4vw, 48px)', marginBottom: 40 }}>
+          <div className="print-card" style={{ background: 'rgba(15, 23, 42, 0.76)', backdropFilter: 'blur(6px)', border: `1px solid rgba(197,160,89,0.4)`, borderRadius: 24, padding: 'clamp(28px, 4vw, 48px)', marginBottom: 40 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'center' }}>
               {/* Personal Portrait Photo */}
               <div style={{ flexShrink: 0, margin: '0 auto' }}>
@@ -1355,7 +1317,7 @@ function PresenterFooter({ lang }: { lang: Lang }) {
 
         {/* Closing CTA */}
         <Reveal delay={150}>
-          <div className="print-card" style={{ textAlign: 'center', padding: '36px 28px', background: `rgba(197,160,89,0.09)`, border: `1px solid rgba(197,160,89,0.28)`, borderRadius: 20 }}>
+          <div className="print-card" style={{ textAlign: 'center', padding: '36px 28px', background: 'rgba(15, 23, 42, 0.76)', backdropFilter: 'blur(6px)', border: `1px solid rgba(197,160,89,0.4)`, borderRadius: 20 }}>
             <span style={{ fontSize: 32, display: 'block', marginBottom: 12 }}>🤝</span>
             <p className="print-dark-sub" style={{
               color: 'rgba(255,255,255,0.92)', fontSize: 'clamp(17px, 2.5vw, 21px)',
@@ -1368,8 +1330,8 @@ function PresenterFooter({ lang }: { lang: Lang }) {
         </Reveal>
 
         {/* Copyright */}
-        <div style={{ textAlign: 'center', marginTop: 40, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <p className="print-dark-sub" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, margin: 0, fontFamily: isAr ? 'Cairo, sans-serif' : 'Inter, sans-serif' }}>
+        <div style={{ textAlign: 'center', marginTop: 40, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.22)' }}>
+          <p className="print-dark-sub" style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13.5, fontWeight: 700, margin: 0, fontFamily: isAr ? 'Cairo, sans-serif' : 'Inter, sans-serif', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>
             © 2026 · {isAr ? 'محمود حميده — مقترح مقدم لمجلس إدارة نادي الجالية المصرية بسلطنة عُمان' : 'Mahmoud Hemedah — Proposal submitted to the Board of Directors of the Egyptian Community Club in Oman'}
           </p>
         </div>
@@ -1407,13 +1369,6 @@ const globalCSS = `
   @media (max-width: 960px) {
     .nav-links { display: none !important; }
     .mobile-nav-strip { display: flex !important; }
-  }
-
-  @media (max-width: 768px) {
-    .egypt-drape-banner {
-      width: 44px !important;
-      opacity: 0.26 !important;
-    }
   }
 
   @media (max-width: 560px) {
@@ -1464,6 +1419,14 @@ const globalCSS = `
       border-radius: 16px !important;
       padding: 24px 20px !important;
       margin-bottom: 16px !important;
+    }
+
+    .print-hero-inner {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      backdrop-filter: none !important;
     }
 
     .print-dark-heading {
