@@ -171,125 +171,85 @@ function SectionHeader({
   );
 }
 
-/* ─── Full-Bleed Motion Graphic Waving Egyptian Flag Background ────── */
-function EgyptFlagMotionBg() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+/* ─── Static Ceremonial Draped Egyptian Flags (Left & Right Sides) ──── */
+function EgyptDrapedFlagBanner({ side }: { side: 'left' | 'right' }) {
+  const isLeft = side === 'left';
+  // Left banner: Red outer -> White center -> Black inner
+  // Right banner: Black inner -> White center -> Red outer
+  const colors = isLeft ? ['#CE1126', '#FFFFFF', '#000000'] : ['#000000', '#FFFFFF', '#CE1126'];
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  return (
+    <div
+      className="egypt-drape-banner"
+      style={{
+        position: 'absolute',
+        top: 0,
+        [side]: 0,
+        width: 'clamp(58px, 11.5vw, 165px)',
+        height: '86%',
+        display: 'flex',
+        flexDirection: 'row',
+        overflow: 'hidden',
+        opacity: 0.44,
+        boxShadow: isLeft
+          ? '12px 0 36px rgba(0,0,0,0.45)'
+          : '-12px 0 36px rgba(0,0,0,0.45)',
+        borderRight: isLeft ? '1.5px solid rgba(197,160,89,0.45)' : 'none',
+        borderLeft: !isLeft ? '1.5px solid rgba(197,160,89,0.45)' : 'none',
+        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 58%, transparent 100%)',
+        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 58%, transparent 100%)',
+      }}
+    >
+      {/* Three vertical tricolor bands */}
+      {colors.map((bg, idx) => (
+        <div
+          key={idx}
+          style={{
+            flex: 1,
+            height: '100%',
+            background: bg,
+            position: 'relative',
+          }}
+        />
+      ))}
 
-    // Pre-render high-resolution flag texture onto an offscreen canvas once
-    const texW = 900;
-    const texH = 600;
-    const off = document.createElement('canvas');
-    off.width = texW;
-    off.height = texH;
-    const octx = off.getContext('2d');
-    if (!octx) return;
+      {/* Authentic Official Golden Eagle of Saladin upright inside center White band */}
+      <div style={{
+        position: 'absolute',
+        top: '23%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '30%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+      }}>
+        <img
+          src="./egypt-eagle.svg"
+          alt=""
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block',
+            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.18))',
+          }}
+        />
+      </div>
 
-    // Tricolor bands
-    octx.fillStyle = '#CE1126';
-    octx.fillRect(0, 0, texW, texH / 3);
-    octx.fillStyle = '#FFFFFF';
-    octx.fillRect(0, texH / 3, texW, texH / 3);
-    octx.fillStyle = '#000000';
-    octx.fillRect(0, (texH * 2) / 3, texW, texH / 3);
+      {/* Realistic vertical ceremonial curtain drape pleats/shading */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background:
+          'linear-gradient(90deg, rgba(0,0,0,0.34) 0%, rgba(255,255,255,0.12) 15%, rgba(0,0,0,0.05) 33%, rgba(0,0,0,0.22) 50%, rgba(255,255,255,0.12) 67%, rgba(0,0,0,0.06) 84%, rgba(0,0,0,0.34) 100%)',
+        pointerEvents: 'none',
+      }} />
+    </div>
+  );
+}
 
-    // Golden Eagle of Saladin centered in white band
-    octx.save();
-    octx.translate(texW / 2, texH / 2);
-    octx.scale(9.5, 9.5);
-    const eaglePath = new Path2D(
-      'M0-7.2 C1.1-7.2 1.8-6.4 1.8-5.4 C1.8-4.7 1.3-4.2 0.8-4.0 L1.2-2.6 L4.6-4.2 C5.6-4.6 6.5-3.8 6.3-2.6 L5.2 2.4 C4.9 3.6 3.7 4.4 2.4 4.4 L1.4 4.4 L2.1 6.6 L0.8 6.6 L0 5.0 L-0.8 6.6 L-2.1 6.6 L-1.4 4.4 L-2.4 4.4 C-3.7 4.4 -4.9 3.6 -5.2 2.4 L-6.3-2.6 C-6.5-3.8 -5.6-4.6 -4.6-4.2 L-1.2-2.6 L-0.8-4.0 C-1.3-4.2 -1.8-4.7 -1.8-5.4 C-1.8-6.4 -1.1-7.2 0-7.2 Z'
-    );
-    octx.fillStyle = '#C09300';
-    octx.fill(eaglePath);
-    octx.fillStyle = '#FFFFFF';
-    octx.fillRect(-1.4, -2.2, 2.8, 5.2);
-    octx.fillStyle = '#C09300';
-    octx.fillRect(-0.5, -2.2, 1.0, 5.2);
-    octx.restore();
-
-    let rafId = 0;
-    let width = 0;
-    let height = 0;
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-    const resize = () => {
-      const parent = canvas.parentElement;
-      if (!parent) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      width = parent.clientWidth;
-      height = parent.clientHeight;
-      canvas.width = Math.max(1, Math.floor(width * dpr));
-      canvas.height = Math.max(1, Math.floor(height * dpr));
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    resize();
-    const ro = new ResizeObserver(resize);
-    if (canvas.parentElement) ro.observe(canvas.parentElement);
-
-    const start = performance.now();
-
-    const drawFrame = (now: number) => {
-      if (!width || !height) {
-        rafId = requestAnimationFrame(drawFrame);
-        return;
-      }
-
-      const t = (now - start) * 0.001;
-      ctx.clearRect(0, 0, width, height);
-
-      // Cover scaling with generous vertical room for wave amplitude
-      const padY = Math.min(48, height * 0.09);
-      const drawW = width;
-      const drawH = height - padY * 2;
-      const sliceW = 4;
-      const steps = Math.ceil(drawW / sliceW);
-
-      for (let i = 0; i < steps; i++) {
-        const x = i * sliceW;
-        const p = x / drawW;
-        const srcX = p * texW;
-        const srcW = Math.min(texW - srcX, (sliceW / drawW) * texW + 0.8);
-
-        // Travelling cloth wave (gentle on left anchor, fuller wave across center & right)
-        const amp = (10 + p * 26);
-        const phase1 = p * 7.5 - t * 2.3;
-        const phase2 = p * 13.0 - t * 3.4;
-        const waveY = Math.sin(phase1) * amp + Math.sin(phase2) * (amp * 0.25);
-        const slope = Math.cos(phase1);
-
-        const destY = padY + waveY;
-
-        ctx.drawImage(off, srcX, 0, srcW, texH, x, destY, sliceW + 0.6, drawH);
-
-        // 3D cloth fold highlight & shadow
-        if (slope > 0) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${slope * 0.16})`;
-          ctx.fillRect(x, destY, sliceW + 0.6, drawH);
-        } else {
-          ctx.fillStyle = `rgba(0, 0, 0, ${-slope * 0.26})`;
-          ctx.fillRect(x, destY, sliceW + 0.6, drawH);
-        }
-      }
-
-      if (!reducedMotion) {
-        rafId = requestAnimationFrame(drawFrame);
-      }
-    };
-
-    rafId = requestAnimationFrame(drawFrame);
-    return () => {
-      cancelAnimationFrame(rafId);
-      ro.disconnect();
-    };
-  }, []);
-
+function EgyptDrapedFlagsBg() {
   return (
     <div
       className="no-print"
@@ -302,22 +262,8 @@ function EgyptFlagMotionBg() {
         zIndex: 0,
       }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block',
-          opacity: 0.26,
-          filter: 'saturate(1.08)',
-        }}
-      />
-      {/* Executive dark vignette scrim so white & gold typography stays razor sharp */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.42) 0%, rgba(15,23,42,0.78) 85%, rgba(15,23,42,0.92) 100%)',
-      }} />
+      <EgyptDrapedFlagBanner side="left" />
+      <EgyptDrapedFlagBanner side="right" />
     </div>
   );
 }
@@ -655,8 +601,8 @@ function Hero({ lang, onGoTracks }: { lang: Lang; onGoTracks: () => void }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden', padding: '116px 24px 72px',
     }}>
-      {/* Large Waving Egyptian Flag Motion Graphic Background */}
-      <EgyptFlagMotionBg />
+      {/* Static Ceremonial Draped Official Egyptian Flags (Left & Right) */}
+      <EgyptDrapedFlagsBg />
       <div className="no-print" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)`, zIndex: 1 }} />
 
       <div style={{ maxWidth: 880, textAlign: 'center', position: 'relative', zIndex: 2 }}>
@@ -1296,8 +1242,8 @@ function PresenterFooter({ lang }: { lang: Lang }) {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Large Waving Egyptian Flag Motion Graphic Background */}
-      <EgyptFlagMotionBg />
+      {/* Static Ceremonial Draped Official Egyptian Flags (Left & Right) */}
+      <EgyptDrapedFlagsBg />
       <div style={{ maxWidth: 1000, margin: '0 auto', position: 'relative', zIndex: 2 }}>
         <Reveal>
           <SectionHeader
@@ -1461,6 +1407,13 @@ const globalCSS = `
   @media (max-width: 960px) {
     .nav-links { display: none !important; }
     .mobile-nav-strip { display: flex !important; }
+  }
+
+  @media (max-width: 768px) {
+    .egypt-drape-banner {
+      width: 44px !important;
+      opacity: 0.26 !important;
+    }
   }
 
   @media (max-width: 560px) {
