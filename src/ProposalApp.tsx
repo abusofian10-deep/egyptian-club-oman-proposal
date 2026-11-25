@@ -171,8 +171,121 @@ function SectionHeader({
   );
 }
 
-/* ─── Authentic Static Horizontal Egyptian Flag Background (High Contrast) ── */
+/* ─── Authentic Animated Motion-Graphic Horizontal Egyptian Flag ────── */
 function EgyptHorizontalFlagBg() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = './flag-of-egypt.svg';
+
+    let rafId = 0;
+    let width = 0;
+    let height = 0;
+    let texReady = false;
+    const texW = 900;
+    const texH = 600;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      width = parent.clientWidth;
+      height = parent.clientHeight;
+      canvas.width = Math.max(1, Math.floor(width * dpr));
+      canvas.height = Math.max(1, Math.floor(height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resize();
+    const ro = new ResizeObserver(resize);
+    if (canvas.parentElement) ro.observe(canvas.parentElement);
+
+    const start = performance.now();
+
+    const drawFrame = (now: number) => {
+      if (!texReady || !width || !height) {
+        if (!reducedMotion) rafId = requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      const t = (now - start) * 0.001;
+      ctx.clearRect(0, 0, width, height);
+
+      // Leave gentle top/bottom margin for cloth wave amplitude
+      const padY = Math.min(30, height * 0.055);
+      const drawW = width;
+      const drawH = height - padY * 2;
+      const boxAspect = drawW / Math.max(1, drawH);
+      const texAspect = texW / texH;
+
+      // Proportional cover-crop math so the authentic Eagle never stretches on mobile or desktop
+      let srcX0 = 0;
+      let srcY0 = 0;
+      let srcWTotal = texW;
+      let srcHTotal = texH;
+      if (boxAspect >= texAspect) {
+        srcHTotal = texW / boxAspect;
+        srcY0 = (texH - srcHTotal) / 2;
+      } else {
+        srcWTotal = texH * boxAspect;
+        srcX0 = (texW - srcWTotal) / 2;
+      }
+
+      const sliceW = 4;
+      const steps = Math.ceil(drawW / sliceW);
+
+      for (let i = 0; i < steps; i++) {
+        const x = i * sliceW;
+        const p = x / drawW;
+        const sx = srcX0 + p * srcWTotal;
+        const sw = Math.min(srcX0 + srcWTotal - sx, (sliceW / drawW) * srcWTotal + 0.8);
+
+        // Smooth travelling silk-wave motion across the flag
+        const amp = (8 + p * 18) * (height < 600 ? 0.75 : 1);
+        const phase1 = p * 7.2 - t * 2.4;
+        const phase2 = p * 12.6 - t * 3.5;
+        const waveY = Math.sin(phase1) * amp + Math.sin(phase2) * (amp * 0.24);
+        const slope = Math.cos(phase1);
+
+        const destY = padY + waveY;
+
+        ctx.drawImage(img, sx, srcY0, sw, srcHTotal, x, destY, sliceW + 0.6, drawH);
+
+        // Realistic fabric fold highlights & shadows
+        if (slope > 0) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${slope * 0.14})`;
+          ctx.fillRect(x, destY, sliceW + 0.6, drawH);
+        } else {
+          ctx.fillStyle = `rgba(0, 0, 0, ${-slope * 0.24})`;
+          ctx.fillRect(x, destY, sliceW + 0.6, drawH);
+        }
+      }
+
+      if (!reducedMotion) {
+        rafId = requestAnimationFrame(drawFrame);
+      }
+    };
+
+    img.onload = () => {
+      texReady = true;
+      setLoaded(true);
+      rafId = requestAnimationFrame(drawFrame);
+    };
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
     <div
       className="no-print"
@@ -186,24 +299,37 @@ function EgyptHorizontalFlagBg() {
         backgroundColor: C.navy,
       }}
     >
-      <img
-        src="./flag-of-egypt.svg"
-        alt=""
+      {/* Instant static fallback while SVG loads */}
+      {!loaded && (
+        <img
+          src="./flag-of-egypt.svg"
+          alt=""
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center center',
+            display: 'block',
+            opacity: 0.74,
+            filter: 'contrast(1.16) saturate(1.18)',
+          }}
+        />
+      )}
+      <canvas
+        ref={canvasRef}
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center center',
           display: 'block',
-          opacity: 0.74,
+          opacity: 0.78,
           filter: 'contrast(1.16) saturate(1.18)',
         }}
       />
-      {/* Light edge vignette only — keeps the flag vivid & high-contrast on mobile and desktop */}
+      {/* Light edge vignette only — keeps the waving official flag bold & high-contrast */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.16) 0%, rgba(15,23,42,0.48) 100%)',
+        background: 'radial-gradient(ellipse at center, rgba(15,23,42,0.14) 0%, rgba(15,23,42,0.46) 100%)',
       }} />
     </div>
   );
