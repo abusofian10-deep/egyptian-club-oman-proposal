@@ -219,14 +219,20 @@ function EgyptHorizontalFlagBg() {
       const t = (now - start) * 0.001;
       ctx.clearRect(0, 0, width, height);
 
-      // Leave gentle top/bottom margin for cloth wave amplitude
-      const padY = Math.min(30, height * 0.055);
+      // Leave gentle margin for cloth wave amplitude and cap height to keep true 3:2 flag proportions
+      const padY = Math.min(28, height * 0.05);
+      const availH = Math.max(200, height - padY * 2);
+      const maxFlagH = width < 640
+        ? Math.max(360, width * 0.96)
+        : Math.min(860, Math.max(520, width * 0.64));
       const drawW = width;
-      const drawH = height - padY * 2;
+      const drawH = Math.min(availH, maxFlagH);
+      const baseY = padY + (availH - drawH) * 0.35;
+      const needsVerticalFade = availH > drawH + 10;
       const boxAspect = drawW / Math.max(1, drawH);
       const texAspect = texW / texH;
 
-      // Proportional cover-crop math so the authentic Eagle never stretches on mobile or desktop
+      // Proportional cover-crop math so the authentic Eagle never stretches or zooms excessively
       let srcX0 = 0;
       let srcY0 = 0;
       let srcWTotal = texW;
@@ -249,13 +255,13 @@ function EgyptHorizontalFlagBg() {
         const sw = Math.min(srcX0 + srcWTotal - sx, (sliceW / drawW) * srcWTotal + 0.8);
 
         // Smooth travelling silk-wave motion across the flag
-        const amp = (8 + p * 18) * (height < 600 ? 0.75 : 1);
+        const amp = (8 + p * 18) * (drawH < 500 ? 0.72 : 1);
         const phase1 = p * 7.2 - t * 2.4;
         const phase2 = p * 12.6 - t * 3.5;
         const waveY = Math.sin(phase1) * amp + Math.sin(phase2) * (amp * 0.24);
         const slope = Math.cos(phase1);
 
-        const destY = padY + waveY;
+        const destY = baseY + waveY;
 
         ctx.drawImage(img, sx, srcY0, sw, srcHTotal, x, destY, sliceW + 0.6, drawH);
 
@@ -266,6 +272,22 @@ function EgyptHorizontalFlagBg() {
         } else {
           ctx.fillStyle = `rgba(0, 0, 0, ${-slope * 0.24})`;
           ctx.fillRect(x, destY, sliceW + 0.6, drawH);
+        }
+
+        // Smoothly feather top & bottom edges into Deep Navy on tall sections (like PresenterFooter)
+        if (needsVerticalFade) {
+          const fadeH = Math.min(56, drawH * 0.14);
+          const topFade = ctx.createLinearGradient(0, destY, 0, destY + fadeH);
+          topFade.addColorStop(0, 'rgba(15, 23, 42, 1)');
+          topFade.addColorStop(1, 'rgba(15, 23, 42, 0)');
+          ctx.fillStyle = topFade;
+          ctx.fillRect(x, destY - 1, sliceW + 0.6, fadeH + 1);
+
+          const botFade = ctx.createLinearGradient(0, destY + drawH - fadeH, 0, destY + drawH);
+          botFade.addColorStop(0, 'rgba(15, 23, 42, 0)');
+          botFade.addColorStop(1, 'rgba(15, 23, 42, 1)');
+          ctx.fillStyle = botFade;
+          ctx.fillRect(x, destY + drawH - fadeH, sliceW + 0.6, fadeH + 1);
         }
       }
 
